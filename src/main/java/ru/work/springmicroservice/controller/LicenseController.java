@@ -8,6 +8,9 @@ import ru.work.springmicroservice.service.LicenseService;
 
 import java.util.Locale;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 @RestController
 @RequestMapping(value = "v1/organization/{organizationId}/license")
 public class LicenseController {
@@ -18,13 +21,13 @@ public class LicenseController {
     public ResponseEntity<License> getLicense(@PathVariable("organizationId") String organisationId,
                                               @PathVariable("licenseId") String licenseId){
         License license = licenseService.getLicense(licenseId, organisationId);
+        license.add(
+                linkTo(methodOn(LicenseController.class).getLicense(organisationId, license.getLicenseId())).withSelfRel(),
+                linkTo(methodOn(LicenseController.class).createLicense(organisationId, license, null)).withRel("createLicense"),
+                linkTo(methodOn(LicenseController.class).updateLicense(organisationId, license)).withRel("updateLicense"),
+                linkTo(methodOn(LicenseController.class).deleteLicense(organisationId, license.getLicenseId(), null)).withRel("deleteLicense")
+        );
         return ResponseEntity.ok(license);
-    }
-
-    @PutMapping
-    public ResponseEntity<String> updateLicense(@PathVariable ("organizationId") String organizationId,
-                                                @RequestBody License request){
-        return ResponseEntity.ok(licenseService.updateLicense(request, organizationId));
     }
 
     @PostMapping
@@ -32,6 +35,12 @@ public class LicenseController {
                                                 @RequestBody License request,
                                                 @RequestHeader(value = "Accept-Language", required = false)Locale locale){
         return ResponseEntity.ok(licenseService.createLicense(request, organizationId, locale));
+    }
+
+    @PutMapping
+    public ResponseEntity<String> updateLicense(@PathVariable ("organizationId") String organizationId,
+                                                @RequestBody License request){
+        return ResponseEntity.ok(licenseService.updateLicense(request, organizationId));
     }
 
     @DeleteMapping(value = "/{licenseId}")
